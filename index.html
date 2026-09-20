@@ -22,19 +22,19 @@
   .pcard-list:hover { border-color: color-mix(in oklab, var(--acc), transparent 45%) !important; }
 
   :root { scroll-behavior: smooth; }
-  body { background: var(--surface, #ffb8df); color: #13151a; }
+  body { background: var(--surface, #ffffff); color: #13151a; }
   button, input, textarea, select { font-family: 'Montserrat', sans-serif; }
   #root { overflow: hidden; transition: background .7s cubic-bezier(.2,.8,.2,1); }
   .bo-site-header { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 18px clamp(20px,5vw,70px); background: color-mix(in srgb, var(--surface), transparent 12%); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(19,21,26,.08); }
-  .bo-wordmark { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: #13151a; font-weight: 900; letter-spacing: -.8px; font-size: 22px; white-space: nowrap; }
-  .bo-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50% 42% 50% 42%; color: #fff; background: #13151a; font-size: 21px; transform: rotate(-8deg); }
+  .bo-wordmark { display: inline-flex; align-items: center; text-decoration: none; color: #13151a; white-space: nowrap; }
+  .bo-logo-image { width: 62px; height: 62px; object-fit: cover; display: block; border-radius: 50%; }
   .bo-site-nav { display: flex; align-items: center; gap: clamp(18px,3.7vw,54px); }
   .bo-site-nav a { position: relative; color: #13151a; text-decoration: none; font-size: 14px; font-weight: 800; padding: 9px 0; }
   .bo-site-nav a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 2px; height: 4px; border-radius: 9px; background: #fff; transition: right .3s cubic-bezier(.2,.8,.2,1); }
   .bo-site-nav a:hover::after, .bo-site-nav a.active::after { right: 0; }
   .bo-admin-link { border: 1.5px solid rgba(19,21,26,.32); border-radius: 999px; padding: 9px 15px !important; }
   .bo-admin-link::after { display: none; }
-  @media (max-width: 660px) { .bo-site-header { padding: 14px 18px; } .bo-site-nav { gap: 16px; } .bo-site-nav a:nth-child(2) { display:none; } .bo-wordmark span:last-child { font-size:18px; } }
+  @media (max-width: 660px) { .bo-site-header { padding: 10px 18px; } .bo-site-nav { gap: 16px; } .bo-site-nav a:nth-child(2) { display:none; } .bo-logo-image { width:52px;height:52px; } }
 
   @keyframes bo-fadeup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes bo-bob { 0%, 100% { transform: translateY(0) translateX(0); } 50% { transform: translateY(-16px) translateX(6px); } }
@@ -99,7 +99,7 @@
 </style>
 </head>
 <body>
-<div id="root" style="--surface:#ffb8df;--bp:#ffb8df;--bp2:#ea60a6;--acc:#13151a;--ink:#fffcfc;--light:#13151a;min-height:100vh;font-family:'Montserrat',sans-serif;color:#13151a;background:var(--surface);"></div>
+<div id="root" style="--surface:#ffffff;--bp:#ffffff;--bp2:#ea60a6;--acc:#13151a;--ink:#fffcfc;--light:#13151a;min-height:100vh;font-family:'Montserrat',sans-serif;color:#13151a;background:var(--surface);"></div>
 
 <script src="./shared.js"></script>
 <script>
@@ -122,17 +122,17 @@
   var heroTimer = null;
   var heroPaused = false;
   var HERO_PALETTE = [
-    { surface: '#ffb8df', blob: '#ea60a6', glow: '#fffcfc' },
-    { surface: '#c9e1eb', blob: '#8fc7dd', glow: '#fffcfc' },
-    { surface: '#d2e3a2', blob: '#a7c967', glow: '#fffcfc' },
-    { surface: '#ffc72c', blob: '#f3a11d', glow: '#fffcfc' },
+    { surface: '#ffffff', blob: '#ea60a6', glow: '#ffb8df' },
+    { surface: '#ffffff', blob: '#8fc7dd', glow: '#c9e1eb' },
+    { surface: '#ffffff', blob: '#a7c967', glow: '#d2e3a2' },
+    { surface: '#ffffff', blob: '#f3a11d', glow: '#ffc72c' },
   ];
 
   function applyTheme() {
-    document.body.style.background = '#ffb8df';
+    document.body.style.background = '#ffffff';
     document.body.style.transition = 'background .7s cubic-bezier(.2,.8,.2,1)';
-    root.style.setProperty('--surface', '#ffb8df');
-    root.style.setProperty('--bp', '#ffb8df');
+    root.style.setProperty('--surface', '#ffffff');
+    root.style.setProperty('--bp', '#ffffff');
     root.style.setProperty('--bp2', '#ea60a6');
     root.style.setProperty('--acc', '#13151a');
     root.style.setProperty('--ink', '#fffcfc');
@@ -277,9 +277,7 @@
 
   function headerHTML() {
     var b = state.brand || {};
-    var brandBit = b.logo
-      ? '<img src="' + esc(b.logo) + '" alt="' + esc(b.name || 'Bowled Over') + '" style="height:42px;width:auto;max-width:150px;object-fit:contain;display:block;" />'
-      : '<span class="bo-mark">◒</span><span>' + esc(b.name || 'Bowled Over') + '</span>';
+    var brandBit = '<img class="bo-logo-image" src="' + esc(b.logo || './images/bowled-over-logo.jpg') + '" alt="' + esc(b.name || 'Bowled Over') + '" />';
     return '<header class="bo-site-header">' +
       '<a class="bo-wordmark" href="#home" aria-label="Bowled Over home">' + brandBit + '</a>' +
       '<nav class="bo-site-nav" aria-label="Main navigation">' +

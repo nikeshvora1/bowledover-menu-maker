@@ -27,7 +27,7 @@
   function gid() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   function seed() {
-    var b = { name: 'Bowled Over', tagline: 'Where taste meets balance — every bowl crafted with precision.', logo: null, primary: '#2A0714', magenta: '#7C1247', accent: '#F1C878', ink: '#4A0E24' };
+    var b = { name: 'Bowled Over', tagline: 'Where taste meets balance — every bowl crafted with precision.', logo: './images/bowled-over-logo.jpg', primary: '#2A0714', magenta: '#7C1247', accent: '#F1C878', ink: '#4A0E24' };
     var cats = [
       { id: 'c1', name: 'Smoothie Bowls' }, { id: 'c2', name: 'Grain Bowls' },
       { id: 'c3', name: 'Cold-Pressed Juices' }, { id: 'c4', name: 'Boosters & Add-ons' },
