@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bowled Over — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 999px; }
+  input, textarea, select, button { font-family: inherit; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--acc); outline-offset: 1px; }
+  a { color: inherit; }
+  @keyframes bo-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes bo-pop { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes bo-toast { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .chip-inactive:hover { border: 1px solid var(--acc) !important; background: color-mix(in oklab, var(--acc), transparent 88%) !important; }
+</style>
+</head>
+<body>
+<div id="root" style="--bp:#2A0714;--bp2:#7C1247;--acc:#F1C878;--ink:#4A0E24;--light:#F6E9DA;min-height:100vh;font-family:'DM Sans',sans-serif;color:#F6E9DA;background:radial-gradient(130% 90% at 18% -5%, var(--bp2), var(--bp) 58%);background-attachment:fixed;"></div>
+
+<script src="./shared.js"></script>
+<script>
+"use strict";
+(function () {
+  var B = window.BO;
+  var ALLERGENS = B.ALLERGENS, DIETS = B.DIETS, PRESETS = B.PRESETS;
+  var esc = B.esc, gid = B.gid, chip = B.chip;
+
+  var state = {
+    loaded: false, adminTab: 'brand',
+    brand: null, categories: [], products: [],
+    editing: null, newCat: '', toast: null,
+  };
+  var root = document.getElementById('root');
+  var toastTimer = null;
+
+  function applyTheme() { B.applyTheme(root, state.brand); }
+  function save() { B.save(state.brand, state.categories, state.products); }
+  function toast(msg) {
+    state.toast = msg; renderToast();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { state.toast = null; renderToast(); }, 1900);
+  }
+  function apply(fn) { fn(); save(); render(); }
+  function setSilent(fn) { fn(); save(); }
+  function readFile(file, cb) { if (!file) return; var fr = new FileReader(); fr.onload = function () { cb(fr.result); }; fr.readAsDataURL(file); }
+
+  // ---------- header ----------
+  function headerHTML() {
+    var b = state.brand || {};
+    var brandBit = b.logo
+      ? '<img src="' + esc(b.logo) + '" alt="logo" style="height:38px;width:auto;max-width:150px;object-fit:contain;display:block;" />'
+      : '<span style="font-family:\'Anton\',sans-serif;font-size:22px;letter-spacing:.5px;color:var(--acc);white-space:nowrap;">' + esc(b.name) + '</span>';
+    return '<header style="position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;backdrop-filter:blur(10px);background:color-mix(in oklab, var(--bp), transparent 25%);border-bottom:1px solid color-mix(in oklab, var(--acc), transparent 86%);">' +
+      '<div style="display:flex;align-items:center;gap:12px;min-width:0;">' + brandBit +
+        '<span style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 30%);padding:3px 9px;border-radius:999px;border:1px solid color-mix(in oklab, var(--acc), transparent 70%);">Admin</span>' +
+      '</div>' +
+      '<a href="./index.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;border:1px solid color-mix(in oklab, var(--acc), transparent 60%);color:var(--acc);font-weight:700;font-size:13px;white-space:nowrap;">← View menu</a>' +
+    '</header>';
+  }
+
+  // ---------- admin body ----------
+  function adminHTML() {
+    var s = state;
+    var panelStyle = 'background:color-mix(in oklab, var(--bp2), transparent 82%);border:1px solid color-mix(in oklab, var(--acc), transparent 86%);border-radius:20px;padding:22px;';
+    var panelTitleStyle = "margin:0 0 16px;font-family:'Anton',sans-serif;font-weight:400;font-size:22px;letter-spacing:.4px;color:#F6E9DA;";
+    var fieldLabelStyle = 'display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.3px;color:color-mix(in oklab, var(--acc), transparent 15%);';
+    var inputStyle = 'width:100%;padding:11px 13px;border-radius:11px;border:1px solid color-mix(in oklab, var(--acc), transparent 72%);background:color-mix(in oklab, var(--bp), transparent 45%);color:#F6E9DA;font-size:14px;font-weight:500;';
+    var textareaStyle = inputStyle + 'resize:vertical;line-height:1.5;';
+    var iconBtnStyle = 'width:34px;height:34px;border-radius:9px;border:1px solid color-mix(in oklab, var(--acc), transparent 78%);background:transparent;color:var(--acc);cursor:pointer;font-size:14px;';
+
+    var tabStyle = function (active) { return 'text-align:left;padding:11px 14px;border-radius:12px;border:1px solid ' + (active ? 'var(--acc)' : 'color-mix(in oklab, var(--acc), transparent 86%)') + ';background:' + (active ? 'var(--acc)' : 'transparent') + ';color:' + (active ? 'var(--ink)' : '#F6E9DA') + ';font-size:14px;font-weight:' + (active ? '800' : '600') + ';cursor:pointer;'; };
+    var tabs = [['brand', 'Brand & Theme'], ['categories', 'Categories'], ['products', 'Products']].map(function (t) {
+      return '<button data-act="admin-tab" data-val="' + t[0] + '" style="' + tabStyle(s.adminTab === t[0]) + '">' + esc(t[1]) + '</button>';
+    }).join('');
+
+    var body = '';
+    if (s.adminTab === 'brand') body = adminBrandHTML(panelStyle, panelTitleStyle, fieldLabelStyle, inputStyle, textareaStyle);
+    else if (s.adminTab === 'categories') body = adminCatsHTML(panelStyle, panelTitleStyle, inputStyle, iconBtnStyle);
+    else body = adminProductsHTML(panelStyle);
+
+    return '<main style="max-width:1180px;margin:0 auto;padding:26px 20px 80px;display:grid;grid-template-columns:220px 1fr;gap:26px;animation:bo-fade .3s ease;">' +
+      '<aside style="display:flex;flex-direction:column;gap:6px;position:sticky;top:80px;align-self:start;">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 25%);padding:0 4px 8px;">Manage</div>' +
+        tabs +
+        '<button data-act="reset-all" style="margin-top:14px;text-align:left;padding:11px 14px;border-radius:12px;border:1px solid color-mix(in oklab, var(--acc), transparent 78%);background:transparent;color:color-mix(in oklab, #F6E9DA, transparent 30%);font-size:13px;font-weight:600;cursor:pointer;">↺ Reset sample data</button>' +
+      '</aside>' +
+      '<div style="min-width:0;">' + body + '</div>' +
+    '</main>';
+  }
+
+  function adminBrandHTML(panelStyle, panelTitleStyle, fieldLabelStyle, inputStyle, textareaStyle) {
+    var b = state.brand || {};
+    var logoPreview = b.logo
+      ? '<img src="' + esc(b.logo) + '" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;" />'
+      : '<span style="font-size:11px;color:color-mix(in oklab, var(--acc), transparent 30%);">No logo</span>';
+    var removeLogoBtn = b.logo ? '<button data-act="remove-logo" style="padding:9px 14px;border-radius:999px;border:1px solid color-mix(in oklab, var(--acc), transparent 70%);background:transparent;color:#F6E9DA;font-size:13px;cursor:pointer;">Remove</button>' : '';
+
+    var dot = function (c) { return 'width:15px;height:15px;border-radius:50%;border:2px solid var(--bp);margin-left:-5px;background:' + c + ';'; };
+    var presets = PRESETS.map(function (pr, i) {
+      var d1 = 'width:15px;height:15px;border-radius:50%;border:2px solid var(--bp);background:' + pr.primary + ';';
+      return '<button data-act="preset-apply" data-idx="' + i + '" style="display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:14px;border:1px solid color-mix(in oklab, var(--acc), transparent 78%);background:color-mix(in oklab, var(--bp), transparent 45%);color:#F6E9DA;cursor:pointer;font-size:13px;font-weight:600;">' +
+        '<span style="display:flex;"><span style="' + d1 + '"></span><span style="' + dot(pr.magenta) + '"></span><span style="' + dot(pr.accent) + '"></span></span>' + esc(pr.label) +
+      '</button>';
+    }).join('');
+
+    var colorFields = [['Background', 'primary'], ['Secondary', 'magenta'], ['Accent', 'accent'], ['Text on accent', 'ink']].map(function (cf) {
+      var label = cf[0], key = cf[1], val = b[key] || '#000000';
+      return '<label style="display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:700;color:color-mix(in oklab, var(--acc), transparent 15%);">' + esc(label) +
+        '<span style="display:flex;align-items:center;gap:9px;padding:6px;border-radius:12px;border:1px solid color-mix(in oklab, var(--acc), transparent 78%);background:color-mix(in oklab, var(--bp), transparent 45%);">' +
+          '<input type="color" value="' + esc(val) + '" data-act="color-field" data-key="' + key + '" style="width:34px;height:34px;border:none;background:none;padding:0;border-radius:8px;cursor:pointer;" />' +
+          '<span data-hex="' + key + '" style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:#F6E9DA;">' + esc(val) + '</span>' +
+        '</span>' +
+      '</label>';
+    }).join('');
+
+    return '<div style="display:flex;flex-direction:column;gap:22px;">' +
+      '<div style="' + panelStyle + '">' +
+        '<h3 style="' + panelTitleStyle + '">Brand identity</h3>' +
+        '<div style="display:flex;flex-direction:column;gap:16px;max-width:560px;">' +
+          '<label style="' + fieldLabelStyle + '">Restaurant name<input value="' + esc(b.name) + '" data-act="brand-name" style="' + inputStyle + '" /></label>' +
+          '<label style="' + fieldLabelStyle + '">Tagline<textarea data-act="brand-tagline" rows="2" style="' + textareaStyle + '">' + esc(b.tagline) + '</textarea></label>' +
+          '<div style="' + fieldLabelStyle + '">Logo' +
+            '<div style="display:flex;align-items:center;gap:14px;margin-top:6px;">' +
+              '<div style="width:96px;height:64px;border-radius:12px;border:1px dashed color-mix(in oklab, var(--acc), transparent 60%);display:flex;align-items:center;justify-content:center;overflow:hidden;background:color-mix(in oklab, var(--bp), transparent 40%);">' + logoPreview + '</div>' +
+              '<label style="padding:9px 15px;border-radius:999px;background:var(--acc);color:var(--ink);font-weight:800;font-size:13px;cursor:pointer;">Upload<input type="file" accept="image/*" data-act="logo-input" style="display:none;" /></label>' +
+              removeLogoBtn +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="' + panelStyle + '">' +
+        '<h3 style="' + panelTitleStyle + '">Theme</h3>' +
+        '<p style="margin:0 0 16px;font-size:13px;color:color-mix(in oklab, #F6E9DA, transparent 35%);">Pick a preset or fine-tune each colour. Changes apply to the menu instantly.</p>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;">' + presets + '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;">' + colorFields + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function adminCatsHTML(panelStyle, panelTitleStyle, inputStyle, iconBtnStyle) {
+    var s = state;
+    var rows = s.categories.map(function (c) {
+      var n = s.products.filter(function (p) { return p.categoryId === c.id; }).length;
+      var countLabel = n + (n === 1 ? ' item' : ' items');
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;border:1px solid color-mix(in oklab, var(--acc), transparent 84%);background:color-mix(in oklab, var(--bp), transparent 50%);">' +
+        '<input value="' + esc(c.name) + '" data-act="cat-rename" data-id="' + esc(c.id) + '" style="flex:1;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid color-mix(in oklab, var(--acc), transparent 82%);background:color-mix(in oklab, var(--bp), transparent 30%);color:#F6E9DA;font-size:14px;font-weight:600;" />' +
+        '<span style="font-size:12px;color:color-mix(in oklab, var(--acc), transparent 20%);white-space:nowrap;">' + esc(countLabel) + '</span>' +
+        '<button data-act="cat-up" data-id="' + esc(c.id) + '" style="' + iconBtnStyle + '">↑</button>' +
+        '<button data-act="cat-down" data-id="' + esc(c.id) + '" style="' + iconBtnStyle + '">↓</button>' +
+        '<button data-act="cat-delete" data-id="' + esc(c.id) + '" style="width:34px;height:34px;border-radius:9px;border:1px solid color-mix(in oklab, #e5484d, transparent 55%);background:transparent;color:#ff8a8d;cursor:pointer;font-size:15px;">✕</button>' +
+      '</div>';
+    }).join('');
+    return '<div style="' + panelStyle + '">' +
+      '<h3 style="' + panelTitleStyle + '">Categories</h3>' +
+      '<div style="display:flex;gap:10px;margin-bottom:20px;max-width:520px;">' +
+        '<input value="' + esc(s.newCat) + '" data-act="new-cat" placeholder="New category name…" style="' + inputStyle + '" />' +
+        '<button data-act="add-cat" style="padding:11px 18px;border-radius:12px;border:none;background:var(--acc);color:var(--ink);font-weight:800;cursor:pointer;white-space:nowrap;">+ Add</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px;max-width:640px;">' + rows + '</div>' +
+    '</div>';
+  }
+
+  function adminProductsHTML(panelStyle) {
+    var s = state;
+    var catName = function (id) { var c = s.categories.find(function (x) { return x.id === id; }); return c ? c.name : '—'; };
+    var rows = s.categories.reduce(function (acc, c) { return acc.concat(s.products.filter(function (p) { return p.categoryId === c.id; })); }, []).map(function (p) {
+      var thumb = p.image
+        ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" style="width:100%;height:100%;object-fit:cover;" />'
+        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, color-mix(in oklab, var(--acc), var(--bp) 40%), var(--bp));font-family:\'Anton\',sans-serif;font-size:22px;color:color-mix(in oklab, var(--acc), transparent 30%);">' + esc((p.name || '?').charAt(0).toUpperCase()) + '</div>';
+      var metaLabel = catName(p.categoryId) + '  ·  ₹' + p.price + '  ·  ' + p.macros.cal + ' kcal';
+      return '<div style="display:flex;align-items:center;gap:13px;padding:9px 10px;border-radius:14px;border:1px solid color-mix(in oklab, var(--acc), transparent 86%);background:color-mix(in oklab, var(--bp), transparent 50%);">' +
+        '<div style="width:54px;height:54px;flex:0 0 54px;border-radius:11px;overflow:hidden;">' + thumb + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-weight:700;font-size:14.5px;color:#F6E9DA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(p.name) + '</div>' +
+          '<div style="font-size:12px;color:color-mix(in oklab, var(--acc), transparent 18%);">' + esc(metaLabel) + '</div>' +
+        '</div>' +
+        '<button data-act="product-edit" data-id="' + esc(p.id) + '" style="padding:8px 14px;border-radius:10px;border:1px solid color-mix(in oklab, var(--acc), transparent 65%);background:transparent;color:var(--acc);font-weight:700;font-size:13px;cursor:pointer;">Edit</button>' +
+        '<button data-act="product-delete" data-id="' + esc(p.id) + '" style="width:34px;height:34px;border-radius:9px;border:1px solid color-mix(in oklab, #e5484d, transparent 55%);background:transparent;color:#ff8a8d;cursor:pointer;">✕</button>' +
+      '</div>';
+    }).join('');
+    return '<div style="' + panelStyle + '">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;">' +
+        '<h3 style="margin:0;font-family:\'Anton\',sans-serif;font-weight:400;font-size:22px;letter-spacing:.4px;color:#F6E9DA;">Products <span style="color:var(--acc);">(' + s.products.length + ')</span></h3>' +
+        '<button data-act="add-product" style="padding:11px 18px;border-radius:12px;border:none;background:var(--acc);color:var(--ink);font-weight:800;cursor:pointer;">+ Add dish</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:9px;">' + rows + '</div>' +
+    '</div>';
+  }
+
+  // ---------- editor modal ----------
+  function editorModalHTML() {
+    var d = state.editing;
+    if (!d) return '';
+    var fieldLabelStyle = 'display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.3px;color:color-mix(in oklab, var(--acc), transparent 15%);';
+    var inputStyle = 'width:100%;padding:11px 13px;border-radius:11px;border:1px solid color-mix(in oklab, var(--acc), transparent 72%);background:color-mix(in oklab, var(--bp), transparent 45%);color:#F6E9DA;font-size:14px;font-weight:500;';
+    var textareaStyle = inputStyle + 'resize:vertical;line-height:1.5;';
+    var groupLabelStyle = 'font-size:12px;font-weight:700;letter-spacing:.3px;color:color-mix(in oklab, var(--acc), transparent 15%);margin-bottom:9px;';
+    var macroFieldStyle = 'display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;color:color-mix(in oklab, var(--acc), transparent 20%);';
+    var macroInputStyle = 'width:100%;padding:9px 10px;border-radius:10px;border:1px solid color-mix(in oklab, var(--acc), transparent 72%);background:color-mix(in oklab, var(--bp), transparent 45%);color:#F6E9DA;font-size:14px;font-weight:600;text-align:center;';
+
+    var preview = d.image
+      ? '<img src="' + esc(d.image) + '" alt="preview" style="width:100%;height:100%;object-fit:cover;" />'
+      : '<span style="font-size:11px;color:color-mix(in oklab, var(--acc), transparent 30%);">No image</span>';
+    var removeImg = d.image ? '<button data-act="remove-draft-image" style="padding:8px 14px;border-radius:999px;border:1px solid color-mix(in oklab, var(--acc), transparent 70%);background:transparent;color:#F6E9DA;font-size:13px;cursor:pointer;">Remove</button>' : '';
+
+    var catOptions = state.categories.map(function (c) {
+      return '<option value="' + esc(c.id) + '"' + (c.id === d.categoryId ? ' selected' : '') + '>' + esc(c.name) + '</option>';
+    }).join('');
+
+    var mac = d.macros || {};
+    var dietOpts = DIETS.map(function (x) { return chip(x, (d.diets || []).indexOf(x) !== -1, 'data-act="draft-diet-toggle" data-val="' + esc(x) + '"'); }).join('');
+    var allergenOpts = ALLERGENS.map(function (x) { return chip(x, (d.allergens || []).indexOf(x) !== -1, 'data-act="draft-allergen-toggle" data-val="' + esc(x) + '"'); }).join('');
+
+    return '<div data-act="cancel-edit" style="position:fixed;inset:0;z-index:70;background:rgba(10,2,8,.74);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;animation:bo-fade .2s ease;">' +
+      '<div data-act="noop" style="width:100%;max-width:640px;max-height:92vh;overflow:auto;background:var(--bp);border:1px solid color-mix(in oklab, var(--acc), transparent 78%);border-radius:22px;padding:24px;animation:bo-pop .26s cubic-bezier(.2,.8,.2,1);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">' +
+          '<h3 style="margin:0;font-family:\'Anton\',sans-serif;font-weight:400;font-size:24px;letter-spacing:.4px;color:#F6E9DA;">' + (d.id ? 'Edit dish' : 'New dish') + '</h3>' +
+          '<button data-act="cancel-edit" style="width:36px;height:36px;border-radius:999px;border:1px solid color-mix(in oklab, var(--acc), transparent 70%);background:transparent;color:#F6E9DA;font-size:17px;cursor:pointer;">✕</button>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:16px;">' +
+          '<div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">' +
+            '<div style="width:110px;height:88px;flex:0 0 110px;border-radius:13px;border:1px dashed color-mix(in oklab, var(--acc), transparent 55%);overflow:hidden;display:flex;align-items:center;justify-content:center;background:color-mix(in oklab, var(--bp), transparent 40%);">' + preview + '</div>' +
+            '<div style="display:flex;flex-direction:column;gap:8px;">' +
+              '<label style="padding:9px 15px;border-radius:999px;background:var(--acc);color:var(--ink);font-weight:800;font-size:13px;cursor:pointer;display:inline-block;">Upload photo<input type="file" accept="image/*" data-act="draft-image-input" style="display:none;" /></label>' +
+              removeImg +
+            '</div>' +
+          '</div>' +
+          '<label style="' + fieldLabelStyle + '">Dish name<input value="' + esc(d.name) + '" data-act="draft-name" placeholder="e.g. Choco Banana Blend" style="' + inputStyle + '" /></label>' +
+          '<div style="display:flex;gap:14px;flex-wrap:wrap;">' +
+            '<label style="' + fieldLabelStyle + 'flex:1;min-width:180px;">Category<select data-act="draft-cat" style="' + inputStyle + '">' + catOptions + '</select></label>' +
+            '<label style="' + fieldLabelStyle + 'width:150px;">Price (₹)<input type="number" value="' + esc(d.price) + '" data-act="draft-price" style="' + inputStyle + '" /></label>' +
+          '</div>' +
+          '<label style="' + fieldLabelStyle + '">Description<textarea data-act="draft-desc" rows="3" placeholder="Ingredients & short description…" style="' + textareaStyle + '">' + esc(d.description) + '</textarea></label>' +
+          '<div>' +
+            '<div style="' + groupLabelStyle + '">Macros (per serving)</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">' +
+              '<label style="' + macroFieldStyle + '">Cal<input type="number" value="' + esc(mac.cal) + '" data-act="draft-cal" style="' + macroInputStyle + '" /></label>' +
+              '<label style="' + macroFieldStyle + '">Protein<input type="number" value="' + esc(mac.protein) + '" data-act="draft-protein" style="' + macroInputStyle + '" /></label>' +
+              '<label style="' + macroFieldStyle + '">Carbs<input type="number" value="' + esc(mac.carbs) + '" data-act="draft-carbs" style="' + macroInputStyle + '" /></label>' +
+              '<label style="' + macroFieldStyle + '">Fat<input type="number" value="' + esc(mac.fat) + '" data-act="draft-fat" style="' + macroInputStyle + '" /></label>' +
+            '</div>' +
+          '</div>' +
+          '<div><div style="' + groupLabelStyle + '">Dietary tags</div><div style="display:flex;flex-wrap:wrap;gap:7px;">' + dietOpts + '</div></div>' +
+          '<div><div style="' + groupLabelStyle + '">Allergens</div><div style="display:flex;flex-wrap:wrap;gap:7px;">' + allergenOpts + '</div></div>' +
+          '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">' +
+            '<button data-act="cancel-edit" style="padding:11px 20px;border-radius:12px;border:1px solid color-mix(in oklab, var(--acc), transparent 70%);background:transparent;color:#F6E9DA;font-weight:700;cursor:pointer;">Cancel</button>' +
+            '<button data-act="save-edit" style="padding:11px 24px;border-radius:12px;border:none;background:var(--acc);color:var(--ink);font-weight:800;cursor:pointer;">Save dish</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // ---------- render ----------
+  function render() {
+    if (!state.loaded) {
+      root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--acc);font-family:\'Anton\',sans-serif;font-size:24px;letter-spacing:1px;">LOADING…</div>';
+      return;
+    }
+    root.innerHTML = headerHTML() + adminHTML() + editorModalHTML() + toastMarkup();
+  }
+  function toastMarkup() {
+    if (!state.toast) return '<div id="bo-toast"></div>';
+    return '<div id="bo-toast"><div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:90;background:var(--acc);color:var(--ink);font-weight:800;font-size:14px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:bo-toast .25s ease;">' + esc(state.toast) + '</div></div>';
+  }
+  function renderToast() {
+    var el = document.getElementById('bo-toast');
+    if (!el) { render(); return; }
+    el.innerHTML = state.toast
+      ? '<div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:90;background:var(--acc);color:var(--ink);font-weight:800;font-size:14px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:bo-toast .25s ease;">' + esc(state.toast) + '</div>'
+      : '';
+  }
+
+  // ---------- mutations ----------
+  function moveCategory(id, dir) {
+    var arr = state.categories.slice();
+    var i = arr.findIndex(function (c) { return c.id === id; });
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= arr.length) return;
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    state.categories = arr;
+  }
+  function addCategory() {
+    var n = (state.newCat || '').trim(); if (!n) return;
+    apply(function () { state.categories = state.categories.concat([{ id: gid(), name: n }]); state.newCat = ''; });
+    toast('Category added');
+  }
+  function applyPreset(pr) {
+    if (!pr) return;
+    apply(function () { state.brand = Object.assign({}, state.brand, { primary: pr.primary, magenta: pr.magenta, accent: pr.accent, ink: pr.ink }); });
+    applyTheme();
+    toast(pr.label + ' theme applied');
+  }
+  function resetAll() {
+    var d = B.seed();
+    apply(function () { state.brand = d.brand; state.categories = d.categories; state.products = d.products; state.editing = null; });
+    applyTheme();
+    toast('Reset to sample menu');
+  }
+  function startAdd() {
+    var first = state.categories[0];
+    apply(function () { state.editing = { id: null, categoryId: first ? first.id : '', name: '', description: '', image: null, price: '', macros: { cal: '', protein: '', carbs: '', fat: '' }, allergens: [], diets: [] }; });
+  }
+  function startEdit(id) {
+    var p = state.products.find(function (x) { return x.id === id; });
+    if (p) apply(function () { state.editing = JSON.parse(JSON.stringify(p)); });
+  }
+  function setDraftSilent(fn) { if (!state.editing) return; fn(); }
+  function toggleDraftArr(field, val) {
+    var arr = state.editing[field] || [];
+    var has = arr.indexOf(val) !== -1;
+    state.editing = Object.assign({}, state.editing);
+    state.editing[field] = has ? arr.filter(function (x) { return x !== val; }) : arr.concat([val]);
+  }
+  function saveEdit() {
+    var d = state.editing; if (!d) return;
+    if (!(d.name || '').trim()) { toast('Please add a dish name'); return; }
+    var num = function (v) { var n = Number(v); return isNaN(n) ? 0 : n; };
+    var clean = { id: d.id || gid(), categoryId: d.categoryId, name: d.name.trim(), description: d.description || '', image: d.image || null, price: num(d.price), macros: { cal: num(d.macros.cal), protein: num(d.macros.protein), carbs: num(d.macros.carbs), fat: num(d.macros.fat) }, allergens: d.allergens || [], diets: d.diets || [] };
+    apply(function () {
+      state.products = d.id ? state.products.map(function (p) { return p.id === d.id ? clean : p; }) : state.products.concat([clean]);
+      state.editing = null;
+    });
+    toast(d.id ? 'Dish updated' : 'Dish added');
+  }
+
+  // ---------- events ----------
+  function onClick(e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+    var id = el.getAttribute('data-id');
+    var val = el.getAttribute('data-val');
+    switch (act) {
+      case 'noop': return;
+      case 'admin-tab': apply(function () { state.adminTab = val; }); break;
+      case 'reset-all': resetAll(); break;
+      case 'preset-apply': applyPreset(PRESETS[Number(el.getAttribute('data-idx'))]); break;
+      case 'remove-logo': apply(function () { state.brand = Object.assign({}, state.brand, { logo: null }); }); applyTheme(); break;
+      case 'add-cat': addCategory(); break;
+      case 'cat-up': apply(function () { moveCategory(id, -1); }); break;
+      case 'cat-down': apply(function () { moveCategory(id, 1); }); break;
+      case 'cat-delete': apply(function () { state.categories = state.categories.filter(function (c) { return c.id !== id; }); state.products = state.products.filter(function (p) { return p.categoryId !== id; }); }); toast('Category removed'); break;
+      case 'add-product': startAdd(); break;
+      case 'product-edit': startEdit(id); break;
+      case 'product-delete': apply(function () { state.products = state.products.filter(function (p) { return p.id !== id; }); }); toast('Dish removed'); break;
+      case 'cancel-edit': apply(function () { state.editing = null; }); break;
+      case 'save-edit': saveEdit(); break;
+      case 'draft-diet-toggle': apply(function () { toggleDraftArr('diets', val); }); break;
+      case 'draft-allergen-toggle': apply(function () { toggleDraftArr('allergens', val); }); break;
+      case 'remove-draft-image': apply(function () { state.editing = Object.assign({}, state.editing, { image: null }); }); break;
+    }
+  }
+  function onInput(e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+    var v = el.value;
+    switch (act) {
+      case 'brand-name': setSilent(function () { state.brand = Object.assign({}, state.brand, { name: v }); }); break;
+      case 'brand-tagline': setSilent(function () { state.brand = Object.assign({}, state.brand, { tagline: v }); }); break;
+      case 'new-cat': setSilent(function () { state.newCat = v; }); break;
+      case 'cat-rename': { var cid = el.getAttribute('data-id'); setSilent(function () { state.categories = state.categories.map(function (c) { return c.id === cid ? Object.assign({}, c, { name: v }) : c; }); }); break; }
+      case 'color-field': {
+        var ckey = el.getAttribute('data-key');
+        setSilent(function () { state.brand = Object.assign({}, state.brand, {}); state.brand[ckey] = v; });
+        applyTheme();
+        var hex = document.querySelector('[data-hex="' + ckey + '"]');
+        if (hex) hex.textContent = v;
+        break;
+      }
+      case 'draft-name': setDraftSilent(function () { state.editing.name = v; }); break;
+      case 'draft-desc': setDraftSilent(function () { state.editing.description = v; }); break;
+      case 'draft-price': setDraftSilent(function () { state.editing.price = v; }); break;
+      case 'draft-cal': setDraftSilent(function () { state.editing.macros.cal = v; }); break;
+      case 'draft-protein': setDraftSilent(function () { state.editing.macros.protein = v; }); break;
+      case 'draft-carbs': setDraftSilent(function () { state.editing.macros.carbs = v; }); break;
+      case 'draft-fat': setDraftSilent(function () { state.editing.macros.fat = v; }); break;
+    }
+  }
+  function onChange(e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+    switch (act) {
+      case 'draft-cat': setDraftSilent(function () { state.editing.categoryId = el.value; }); break;
+      case 'logo-input': readFile(el.files[0], function (url) { apply(function () { state.brand = Object.assign({}, state.brand, { logo: url }); }); applyTheme(); }); el.value = ''; break;
+      case 'draft-image-input': readFile(el.files[0], function (url) { apply(function () { state.editing = Object.assign({}, state.editing, { image: url }); }); }); el.value = ''; break;
+    }
+  }
+
+  // ---------- boot ----------
+  function boot() {
+    var data = B.load();
+    state.brand = data.brand; state.categories = data.categories; state.products = data.products;
+    state.loaded = true;
+    applyTheme();
+    render();
+    root.addEventListener('click', onClick);
+    root.addEventListener('input', onInput);
+    root.addEventListener('change', onChange);
+  }
+  boot();
+})();
+</script>
+</body>
+</html>

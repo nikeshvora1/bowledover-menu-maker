@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bowled Over — Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 999px; }
+  input, textarea, select, button { font-family: inherit; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--acc); outline-offset: 1px; }
+  @keyframes bo-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes bo-pop { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes bo-toast { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .chip-inactive:hover { border: 1px solid var(--acc) !important; background: color-mix(in oklab, var(--acc), transparent 88%) !important; }
+  .pcard:hover { transform: translateY(-3px); border-color: color-mix(in oklab, var(--acc), transparent 40%) !important; }
+  .pcard-list:hover { border-color: color-mix(in oklab, var(--acc), transparent 45%) !important; }
+
+  :root { scroll-behavior: smooth; }
+  body { background: var(--surface, #ffb8df); color: #13151a; }
+  button, input, textarea, select { font-family: 'Montserrat', sans-serif; }
+  #root { overflow: hidden; transition: background .7s cubic-bezier(.2,.8,.2,1); }
+  .bo-site-header { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 18px clamp(20px,5vw,70px); background: color-mix(in srgb, var(--surface), transparent 12%); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(19,21,26,.08); }
+  .bo-wordmark { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: #13151a; font-weight: 900; letter-spacing: -.8px; font-size: 22px; white-space: nowrap; }
+  .bo-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50% 42% 50% 42%; color: #fff; background: #13151a; font-size: 21px; transform: rotate(-8deg); }
+  .bo-site-nav { display: flex; align-items: center; gap: clamp(18px,3.7vw,54px); }
+  .bo-site-nav a { position: relative; color: #13151a; text-decoration: none; font-size: 14px; font-weight: 800; padding: 9px 0; }
+  .bo-site-nav a::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 2px; height: 4px; border-radius: 9px; background: #fff; transition: right .3s cubic-bezier(.2,.8,.2,1); }
+  .bo-site-nav a:hover::after, .bo-site-nav a.active::after { right: 0; }
+  .bo-admin-link { border: 1.5px solid rgba(19,21,26,.32); border-radius: 999px; padding: 9px 15px !important; }
+  .bo-admin-link::after { display: none; }
+  @media (max-width: 660px) { .bo-site-header { padding: 14px 18px; } .bo-site-nav { gap: 16px; } .bo-site-nav a:nth-child(2) { display:none; } .bo-wordmark span:last-child { font-size:18px; } }
+
+  @keyframes bo-fadeup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bo-bob { 0%, 100% { transform: translateY(0) translateX(0); } 50% { transform: translateY(-16px) translateX(6px); } }
+  .bo-in { animation: bo-fadeup .55s cubic-bezier(.2,.8,.2,1) both; }
+  .bo-in-1 { animation-delay: .02s; } .bo-in-2 { animation-delay: .1s; } .bo-in-3 { animation-delay: .18s; } .bo-in-4 { animation-delay: .26s; }
+
+  .bo-hero { position: relative; }
+  .bo-hero-tabs { display: flex; gap: 26px; justify-content: flex-end; flex-wrap: wrap; margin-bottom: 22px; }
+  .bo-hero-tab { background: none; border: none; cursor: pointer; font-weight: 800; font-size: 13px; padding: 4px 2px 10px; position: relative; color: rgba(19,21,26,.55); transition: color .2s ease; }
+  .bo-hero-tab:hover { color: #13151a; }
+  .bo-hero-tab::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: var(--acc); transition: right .3s cubic-bezier(.4,0,.2,1); }
+  .bo-hero-tab.active { color: #13151a; }
+  .bo-hero-tab.active::after { right: 0; }
+
+  .bo-hero-grid { display: grid; grid-template-columns: minmax(320px,1.05fr) .95fr; gap: clamp(20px,4vw,62px); align-items: center; }
+  @media (max-width: 860px) { .bo-hero-grid { grid-template-columns: 1fr; } }
+
+  .bo-hero-panel { position: relative; overflow: hidden; padding: clamp(36px,5vw,70px) clamp(26px,5vw,62px); border-radius: 34px 170px 170px 34px; display: flex; flex-direction: column; gap: 16px; min-height: 470px; justify-content: center; transition: background .7s cubic-bezier(.2,.8,.2,1); }
+  @media (max-width: 640px) { .bo-hero-panel { border-radius: 26px; padding: 30px 24px; } }
+
+  .bo-float { position: absolute; border-radius: 999px; filter: blur(1px); animation: bo-bob ease-in-out infinite; pointer-events: none; transition: background .55s ease; }
+  @media (prefers-reduced-motion: reduce) { .bo-float { animation: none; } .bo-hero-photo, .bo-in { animation: none !important; } }
+
+  .bo-hero-badge { align-self: flex-start; font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.74); color: #13151a; }
+  .bo-hero-title { margin: 0; font-weight: 900; letter-spacing: -2.2px; line-height: .98; font-size: clamp(38px, 5.2vw, 64px); color: #13151a; position: relative; }
+  .bo-hero-desc { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.55; max-width: 520px; color: rgba(19,21,26,.82); position: relative; }
+  .bo-hero-stats { display: flex; gap: 8px; flex-wrap: wrap; position: relative; }
+
+  .bo-hero-thumbs { display: flex; gap: 14px; position: relative; }
+  .bo-hero-thumb { width: 72px; height: 72px; border-radius: 999px; padding: 0; overflow: hidden; cursor: pointer; border: 4px solid rgba(255,255,255,.5); background: rgba(0,0,0,.1); box-shadow: 0 7px 18px rgba(19,21,26,.14); transition: transform .22s cubic-bezier(.2,.8,.2,1), border-color .18s ease; flex: 0 0 auto; }
+  .bo-hero-thumb:hover { transform: translateY(-4px) scale(1.05); }
+  .bo-hero-thumb.active { border-color: #fff; transform: scale(1.08); }
+  .bo-hero-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.4); }
+  .bo-hero-thumb .init { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'Anton', sans-serif; font-size: 22px; color: var(--acc); }
+
+  .bo-hero-dots { display: flex; gap: 7px; position: relative; }
+  .bo-dot { width: 8px; height: 8px; padding: 0; border: none; border-radius: 999px; background: rgba(255,255,255,.32); cursor: pointer; transition: width .25s ease, background .25s ease; }
+  .bo-dot.active { width: 26px; background: #fff; }
+
+  .bo-hero-cta { align-self: flex-start; margin-top: 4px; padding: 14px 25px; border-radius: 999px; border: 0; background: #13151a; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 0 12px 28px rgba(19,21,26,.18); transition: transform .18s ease, box-shadow .18s ease; position: relative; }
+  .bo-hero-cta:hover { transform: translateY(-2px); }
+
+  .bo-hero-photo-wrap { position: relative; display: flex; align-items: center; justify-content: center; min-height: 430px; padding: 20px 0; }
+  .bo-hero-glow { position: absolute; width: min(92%,540px); aspect-ratio: 1; border-radius: 50%; filter: blur(30px); opacity: .42; transition: background .7s ease; }
+  .bo-hero-photo { position: relative; width: min(88%,520px); aspect-ratio: 1; border-radius: 50%; overflow: hidden; border: 7px solid rgba(255,255,255,.64); box-shadow: 0 30px 55px rgba(76,20,51,.2); padding: 0; cursor: pointer; animation: bo-pop .55s cubic-bezier(.2,.8,.2,1) both; background: #fff; }
+  .bo-hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.3); }
+  .bo-hero-photo .init { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 64px; font-weight:900; color: rgba(19,21,26,.48); background: rgba(255,255,255,.42); }
+  .bo-toolbar { background: rgba(255,255,255,.68) !important; border-color: rgba(19,21,26,.1) !important; box-shadow: 0 18px 50px rgba(76,20,51,.11) !important; backdrop-filter: blur(16px); }
+  .bo-toolbar input { color:#13151a !important; background:rgba(255,255,255,.48) !important; border-color:rgba(19,21,26,.2) !important; }
+  .bo-toolbar input::placeholder { color:rgba(19,21,26,.46); }
+  #bo-results h2, #bo-results h3 { color: #13151a !important; font-family: 'Montserrat', sans-serif !important; font-weight: 800 !important; }
+  .pcard, .pcard-list { background: rgba(255,255,255,.46) !important; border-color: rgba(19,21,26,.1) !important; color: #13151a !important; box-shadow: 0 12px 30px rgba(76,20,51,.07); }
+  .pcard p, .pcard-list p { color: rgba(19,21,26,.64) !important; }
+  .bo-detail-card h2, .bo-detail-card p { color:#13151a !important; }
+  .bo-story { margin: 22px 0 72px; padding: clamp(32px,5vw,68px); border-radius: 36px; background: #13151a; color: #fff; display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; align-items: end; }
+  .bo-story-kicker { color: var(--surface); font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+  .bo-story h2 { margin: 12px 0 0; font-size: clamp(34px,5vw,62px); line-height: .98; letter-spacing: -2.2px; }
+  .bo-story p { margin: 0; color: rgba(255,255,255,.72); font-weight: 500; line-height: 1.7; max-width: 620px; }
+  .bo-footer { display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap; padding: 28px clamp(20px,5vw,70px); border-top: 1px solid rgba(19,21,26,.12); font-size: 12px; font-weight: 700; color: rgba(19,21,26,.68); }
+  @media (max-width: 860px) { .bo-story { grid-template-columns:1fr; } .bo-hero-photo-wrap { min-height:340px; } }
+  @media (max-width: 520px) { .bo-hero-thumbs { gap:8px; } .bo-hero-thumb { width:58px;height:58px; } .bo-hero-panel { min-height:440px; } }
+</style>
+</head>
+<body>
+<div id="root" style="--surface:#ffb8df;--bp:#ffb8df;--bp2:#ea60a6;--acc:#13151a;--ink:#fffcfc;--light:#13151a;min-height:100vh;font-family:'Montserrat',sans-serif;color:#13151a;background:var(--surface);"></div>
+
+<script src="./shared.js"></script>
+<script>
+"use strict";
+(function () {
+  var B = window.BO;
+  var ALLERGENS = B.ALLERGENS, DIETS = B.DIETS, MACRO_SLIDERS = B.MACRO_SLIDERS, MACRO_DEFAULTS = B.MACRO_DEFAULTS;
+  var esc = B.esc, chip = B.chip;
+
+  var state = {
+    loaded: false, layout: 'cards',
+    brand: null, categories: [], products: [],
+    activeCat: null, search: '', filterDiets: [], excludeAllergens: [], sortBy: 'featured',
+    selectedId: null, toast: null, filtersOpen: false,
+    macroFilters: { protein: 0, cal: 800, carbs: 80, fat: 50 },
+    heroProductId: null,
+  };
+  var root = document.getElementById('root');
+  var toastTimer = null;
+  var heroTimer = null;
+  var heroPaused = false;
+  var HERO_PALETTE = [
+    { surface: '#ffb8df', blob: '#ea60a6', glow: '#fffcfc' },
+    { surface: '#c9e1eb', blob: '#8fc7dd', glow: '#fffcfc' },
+    { surface: '#d2e3a2', blob: '#a7c967', glow: '#fffcfc' },
+    { surface: '#ffc72c', blob: '#f3a11d', glow: '#fffcfc' },
+  ];
+
+  function applyTheme() {
+    document.body.style.background = '#ffb8df';
+    document.body.style.transition = 'background .7s cubic-bezier(.2,.8,.2,1)';
+    root.style.setProperty('--surface', '#ffb8df');
+    root.style.setProperty('--bp', '#ffb8df');
+    root.style.setProperty('--bp2', '#ea60a6');
+    root.style.setProperty('--acc', '#13151a');
+    root.style.setProperty('--ink', '#fffcfc');
+    root.style.setProperty('--light', '#13151a');
+  }
+  function toast(msg) {
+    state.toast = msg; renderToast();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { state.toast = null; renderToast(); }, 1900);
+  }
+  function setSilent(fn) { fn(); }
+  function apply(fn) { fn(); render(); }
+
+  // ---------- smart search parser (ported verbatim) ----------
+  function parseSearch(raw) {
+    var constraints = [], dietTags = [], excludes = [];
+    var q = ' ' + (raw || '').toLowerCase() + ' ';
+    var gt = 'at least|greater than|more than|atleast|above|over|min(?:imum)?';
+    var lt = 'at most|less than|fewer than|atmost|below|under|max(?:imum)?';
+    var macros = [
+      { key: 'protein', words: 'protein', def: '>=', suffix: 'g' },
+      { key: 'cal', words: 'cal(?:orie|ories|s)?|kcal', def: '<=', suffix: ' kcal' },
+      { key: 'carbs', words: 'carbohydrates?|carbs?', def: '<=', suffix: 'g' },
+      { key: 'fat', words: 'fats?', def: '<=', suffix: 'g' },
+    ];
+    var num = '(\\d+(?:\\.\\d+)?)\\s*(?:g|gm|gms|grams|kcal|kcals|cals?)?';
+    macros.forEach(function (m) {
+      var re = new RegExp('(?:\\b(' + gt + ')\\b\\s*|\\b(' + lt + ')\\b\\s*)?' + num + '\\s*(?:of\\s*)?(?:' + m.words + ')\\b', 'i');
+      var mt = q.match(re);
+      if (!mt) {
+        re = new RegExp('(?:' + m.words + ')\\b\\s*(?:\\b(' + gt + ')\\b\\s*|\\b(' + lt + ')\\b\\s*)?(?:is\\s*|of\\s*|:\\s*)?' + num, 'i');
+        mt = q.match(re);
+      }
+      if (mt && mt[3] != null) {
+        var op = m.def;
+        if (mt[1]) op = '>='; if (mt[2]) op = '<=';
+        var value = Number(mt[3]);
+        var label = m.key.charAt(0).toUpperCase() + m.key.slice(1) + ' ' + (op === '>=' ? '≥' : '≤') + ' ' + value + m.suffix;
+        constraints.push({ key: m.key, op: op, value: value, raw: mt[0].trim(), label: label });
+        q = q.replace(mt[0], ' ');
+      }
+    });
+    [[/high[-\s]?protein/i, 'High-Protein'], [/\bvegan\b/i, 'Vegan'], [/\bketo\b/i, 'Keto'], [/\bveg(?:etarian)?\b/i, 'Veg']].forEach(function (pair) {
+      var re = pair[0], tag = pair[1];
+      var mt = q.match(re); if (mt) { dietTags.push({ tag: tag, raw: mt[0].trim(), label: tag }); q = q.replace(mt[0], ' '); }
+    });
+    var aw = { nuts: 'Nuts', nut: 'Nuts', dairy: 'Dairy', gluten: 'Gluten', soy: 'Soy', eggs: 'Egg', egg: 'Egg', sesame: 'Sesame' };
+    Object.keys(aw).forEach(function (w) {
+      var re = new RegExp('(?:no|without|free of|free from|hold the)\\s+' + w + '|' + w + '[-\\s]?free', 'i');
+      var mt = q.match(re);
+      if (mt) { var a = aw[w]; if (!excludes.find(function (x) { return x.allergen === a; })) excludes.push({ allergen: a, raw: mt[0].trim(), label: 'No ' + a }); q = q.replace(mt[0], ' '); }
+    });
+    return { constraints: constraints, dietTags: dietTags, excludes: excludes, text: q.replace(/\s+/g, ' ').trim() };
+  }
+
+  function removeFromSearch(raw) {
+    var e = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    state.search = (state.search || '').replace(new RegExp(e, 'i'), '').replace(/\s+/g, ' ').trim();
+    render();
+  }
+
+  function enrich(p) {
+    return Object.assign({}, p, {
+      priceLabel: '₹' + p.price, kcalLabel: p.macros.cal + ' kcal', proteinLabel: p.macros.protein + 'g protein',
+      hasImage: !!p.image, noImage: !p.image, initial: (p.name || '?').trim().charAt(0).toUpperCase(),
+      dietChips: p.diets || [],
+    });
+  }
+
+  function computeMenu() {
+    var s = state;
+    var gridStyles = {
+      cards: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;',
+      list: 'display:flex;flex-direction:column;gap:12px;',
+    };
+    var parsed = parseSearch(s.search);
+    var effDiets = Array.from(new Set(s.filterDiets.concat(parsed.dietTags.map(function (d) { return d.tag; }))));
+    var effExcl = Array.from(new Set(s.excludeAllergens.concat(parsed.excludes.map(function (e) { return e.allergen; }))));
+    var cmp = function (v, op, t) { return op === '>=' ? v >= t : v <= t; };
+    var sliderConstraints = MACRO_SLIDERS.filter(function (m) { return s.macroFilters[m.key] !== m.off; }).map(function (m) { return { key: m.key, op: m.dir, value: s.macroFilters[m.key] }; });
+    var allConstraints = parsed.constraints.concat(sliderConstraints);
+
+    var list = (s.products || []).filter(function (p) {
+      if (parsed.text) { var q = parsed.text; if (!((p.name || '').toLowerCase().indexOf(q) !== -1 || (p.description || '').toLowerCase().indexOf(q) !== -1)) return false; }
+      if (effDiets.length && !effDiets.every(function (d) { return (p.diets || []).indexOf(d) !== -1; })) return false;
+      if (effExcl.length && effExcl.some(function (a) { return (p.allergens || []).indexOf(a) !== -1; })) return false;
+      for (var i = 0; i < allConstraints.length; i++) { var c = allConstraints[i]; if (!cmp(p.macros[c.key], c.op, c.value)) return false; }
+      return true;
+    });
+    if (s.sortBy === 'protein') list = list.slice().sort(function (a, b) { return b.macros.protein - a.macros.protein; });
+    else if (s.sortBy === 'calories') list = list.slice().sort(function (a, b) { return a.macros.cal - b.macros.cal; });
+
+    var groups = s.categories.filter(function (c) { return s.activeCat == null || c.id === s.activeCat; }).map(function (c) {
+      var items = list.filter(function (p) { return p.categoryId === c.id; }).map(enrich);
+      return { id: c.id, name: c.name, products: items, countLabel: items.length + (items.length === 1 ? ' dish' : ' dishes'), gridStyle: gridStyles[s.layout] };
+    }).filter(function (g) { return g.products.length > 0; });
+
+    var activeSliders = MACRO_SLIDERS.filter(function (m) { return s.macroFilters[m.key] !== m.off; }).length;
+    var filterCount = s.filterDiets.length + s.excludeAllergens.length + activeSliders + (s.sortBy !== 'featured' ? 1 : 0);
+
+    return { parsed: parsed, groups: groups, total: list.length, filterCount: filterCount };
+  }
+
+  // ---------- render pieces ----------
+  function productCard(p, layout) {
+    var badges =
+      '<span style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:color-mix(in oklab, var(--acc), transparent 82%);color:color-mix(in oklab, var(--acc), white 14%);">' + esc(p.kcalLabel) + '</span>' +
+      '<span style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:color-mix(in oklab, var(--acc), transparent 82%);color:color-mix(in oklab, var(--acc), white 14%);">' + esc(p.proteinLabel) + '</span>' +
+      p.dietChips.map(function (d) { return '<span style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:var(--acc);color:var(--ink);">' + esc(d) + '</span>'; }).join('');
+
+    if (layout === 'list') {
+      var thumbL = p.hasImage
+        ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" style="width:100%;height:100%;object-fit:cover;display:block;" />'
+        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, color-mix(in oklab, var(--acc), var(--bp) 40%), var(--bp));"><span style="font-family:\'Anton\',sans-serif;font-size:40px;color:color-mix(in oklab, var(--acc), transparent 30%);">' + esc(p.initial) + '</span></div>';
+      return '<button class="pcard-list" data-act="open-product" data-id="' + esc(p.id) + '" style="display:flex;gap:16px;width:100%;text-align:left;align-items:stretch;background:color-mix(in oklab, var(--acc), transparent 92%);border:1px solid color-mix(in oklab, var(--acc), transparent 84%);border-radius:18px;overflow:hidden;cursor:pointer;color:var(--light);font-family:inherit;padding:12px;transition:border-color .14s ease;">' +
+        '<div style="position:relative;width:104px;flex:0 0 104px;height:104px;border-radius:13px;overflow:hidden;">' + thumbL + '</div>' +
+        '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;">' +
+          '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">' +
+            '<h3 style="margin:0;font-family:\'Anton\',sans-serif;font-weight:400;font-size:19px;letter-spacing:.3px;line-height:1.05;color:var(--light);">' + esc(p.name) + '</h3>' +
+            '<span style="font-weight:800;font-size:14px;color:var(--acc);white-space:nowrap;">' + esc(p.priceLabel) + '</span>' +
+          '</div>' +
+          '<p style="margin:0;font-size:12.5px;line-height:1.45;color:color-mix(in oklab, var(--light), transparent 34%);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + esc(p.description) + '</p>' +
+          '<div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">' + badges + '</div>' +
+        '</div>' +
+      '</button>';
+    }
+
+    var thumbC = p.hasImage
+      ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" style="width:100%;height:100%;object-fit:cover;display:block;" />'
+      : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, color-mix(in oklab, var(--acc), var(--bp) 40%), var(--bp));"><span style="font-family:\'Anton\',sans-serif;font-size:62px;color:color-mix(in oklab, var(--acc), transparent 30%);">' + esc(p.initial) + '</span></div>';
+    return '<button class="pcard" data-act="open-product" data-id="' + esc(p.id) + '" style="display:flex;flex-direction:column;width:100%;height:100%;text-align:left;background:color-mix(in oklab, var(--acc), transparent 91%);border:1px solid color-mix(in oklab, var(--acc), transparent 82%);border-radius:20px;overflow:hidden;cursor:pointer;color:var(--light);font-family:inherit;padding:0;transition:transform .14s ease, border-color .14s ease;">' +
+      '<div style="position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;">' + thumbC +
+        '<span style="position:absolute;top:10px;right:10px;background:var(--acc);color:var(--ink);font-weight:800;font-size:13px;padding:6px 11px;border-radius:999px;">' + esc(p.priceLabel) + '</span>' +
+      '</div>' +
+      '<div style="padding:15px 16px 16px;display:flex;flex-direction:column;gap:9px;flex:1;">' +
+        '<h3 style="margin:0;font-family:\'Anton\',sans-serif;font-weight:400;font-size:19px;letter-spacing:.3px;line-height:1.05;color:var(--light);">' + esc(p.name) + '</h3>' +
+        '<p style="margin:0;font-size:12.5px;line-height:1.45;color:color-mix(in oklab, var(--light), transparent 32%);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + esc(p.description) + '</p>' +
+        '<div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">' + badges + '</div>' +
+      '</div>' +
+    '</button>';
+  }
+
+  function headerHTML() {
+    var b = state.brand || {};
+    var brandBit = b.logo
+      ? '<img src="' + esc(b.logo) + '" alt="' + esc(b.name || 'Bowled Over') + '" style="height:42px;width:auto;max-width:150px;object-fit:contain;display:block;" />'
+      : '<span class="bo-mark">◒</span><span>' + esc(b.name || 'Bowled Over') + '</span>';
+    return '<header class="bo-site-header">' +
+      '<a class="bo-wordmark" href="#home" aria-label="Bowled Over home">' + brandBit + '</a>' +
+      '<nav class="bo-site-nav" aria-label="Main navigation">' +
+        '<a class="active" href="#home">Home</a>' +
+        '<a href="#menu">Menu</a>' +
+        '<a href="#story">Our story</a>' +
+        '<a class="bo-admin-link" href="./admin.html">Admin</a>' +
+      '</nav>' +
+    '</header>';
+  }
+
+  function filterButtonHTML(filterCount) {
+    var hasActive = filterCount > 0;
+    var filterBtnStyle = 'display:flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;transition:all .12s ease;border:1px solid ' + (hasActive ? 'var(--acc)' : 'color-mix(in oklab, var(--acc), transparent 60%)') + ';background:' + (hasActive ? 'var(--acc)' : 'transparent') + ';color:' + (hasActive ? 'var(--ink)' : 'color-mix(in oklab, var(--acc), white 8%)') + ';';
+    var badge = hasActive ? '<span style="min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--ink);color:var(--acc);font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;">' + filterCount + '</span>' : '';
+    return '<button id="bo-filterbtn" data-act="toggle-filters" style="' + filterBtnStyle + '">' +
+      '<svg width="15" height="15" viewBox="0 0 18 18" fill="currentColor" style="flex:0 0 auto;"><path d="M1 2.2h16a.6.6 0 0 1 .46 1L11.5 10v5.1a.6.6 0 0 1-.86.54l-3-1.5a.6.6 0 0 1-.33-.54V10L.54 3.2a.6.6 0 0 1 .46-1z"/></svg>' +
+      'Filters' + badge +
+    '</button>';
+  }
+
+  function filtersPopoverHTML() {
+    var s = state;
+    var dietRow = DIETS.map(function (d) { return chip(d, s.filterDiets.indexOf(d) !== -1, 'data-act="diet-toggle" data-val="' + esc(d) + '"'); }).join('');
+    var allergenRow = ALLERGENS.map(function (a) { return chip(a, s.excludeAllergens.indexOf(a) !== -1, 'data-act="allergen-toggle" data-val="' + esc(a) + '"'); }).join('');
+    var sortRow = [['featured', 'Featured'], ['protein', 'High protein'], ['calories', 'Low calorie']].map(function (o) { return chip(o[1], s.sortBy === o[0], 'data-act="sort-set" data-val="' + o[0] + '"'); }).join('');
+    var sliders = MACRO_SLIDERS.map(function (m) {
+      var v = s.macroFilters[m.key]; var active = v !== m.off;
+      var valueLabel = active ? (m.pfx + v + m.unit) : 'Any';
+      return '<div style="display:flex;flex-direction:column;gap:5px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:12.5px;font-weight:600;color:#F6E9DA;">' + esc(m.label) + '</span>' +
+          '<span data-mlabel="' + m.key + '" style="font-size:12px;font-weight:800;color:var(--acc);">' + esc(valueLabel) + '</span>' +
+        '</div>' +
+        '<input type="range" min="' + m.min + '" max="' + m.max + '" step="' + m.step + '" value="' + v + '" data-act="macro-slider" data-key="' + m.key + '" style="width:100%;accent-color:var(--acc);cursor:pointer;" />' +
+      '</div>';
+    }).join('');
+    return '<div data-act="close-filters" style="position:fixed;inset:0;z-index:44;"></div>' +
+      '<div data-act="noop" style="position:absolute;top:calc(100% + 10px);right:0;width:min(340px,86vw);max-height:min(72vh,560px);overflow:auto;z-index:50;background:var(--bp);border:1px solid color-mix(in oklab, var(--acc), transparent 72%);border-radius:18px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:18px;">' +
+        '<div style="display:flex;flex-direction:column;gap:8px;"><span style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 15%);">Diet</span><div style="display:flex;flex-wrap:wrap;gap:7px;">' + dietRow + '</div></div>' +
+        '<div style="display:flex;flex-direction:column;gap:13px;"><span style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 15%);">Macros</span>' + sliders + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;"><span style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 15%);">Exclude allergens</span><div style="display:flex;flex-wrap:wrap;gap:7px;">' + allergenRow + '</div></div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;"><span style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 15%);">Sort</span><div style="display:flex;flex-wrap:wrap;gap:7px;">' + sortRow + '</div></div>' +
+        '<div style="display:flex;gap:10px;justify-content:space-between;align-items:center;border-top:1px solid color-mix(in oklab, var(--acc), transparent 86%);padding-top:14px;">' +
+          '<button data-act="clear-all-filters" style="padding:8px 14px;border-radius:10px;border:none;background:transparent;color:color-mix(in oklab, #F6E9DA, transparent 25%);font-weight:600;font-size:13px;cursor:pointer;">Clear all</button>' +
+          '<button data-act="close-filters" style="padding:9px 20px;border-radius:10px;border:none;background:var(--acc);color:var(--ink);font-weight:800;font-size:13px;cursor:pointer;">Done</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function resultsHTML(m) {
+    if (m.total === 0) {
+      return '<div style="text-align:center;padding:70px 20px;color:color-mix(in oklab, #F6E9DA, transparent 35%);">' +
+        '<div style="font-family:\'Anton\',sans-serif;font-size:30px;color:var(--acc);margin-bottom:8px;">Nothing matches</div>' +
+        '<p style="margin:0 0 18px;">Try clearing a filter to see more dishes.</p>' +
+        '<button data-act="clear-filters" style="padding:11px 20px;border-radius:999px;border:none;background:var(--acc);color:var(--ink);font-weight:800;cursor:pointer;">Clear filters</button>' +
+      '</div>';
+    }
+    return m.groups.map(function (g) {
+      var cards = g.products.map(function (p) { return productCard(p, state.layout); }).join('');
+      return '<section style="margin-bottom:40px;">' +
+        '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">' +
+          '<h2 style="margin:0;font-family:\'Anton\',sans-serif;font-weight:400;font-size:clamp(24px,4vw,34px);letter-spacing:.5px;color:#F6E9DA;">' + esc(g.name) + '</h2>' +
+          '<span style="font-size:13px;font-weight:700;color:var(--acc);background:color-mix(in oklab, var(--acc), transparent 86%);padding:3px 10px;border-radius:999px;">' + esc(g.countLabel) + '</span>' +
+          '<div style="flex:1;height:1px;background:color-mix(in oklab, var(--acc), transparent 80%);"></div>' +
+        '</div>' +
+        '<div style="' + g.gridStyle + '">' + cards + '</div>' +
+      '</section>';
+    }).join('');
+  }
+
+  function autoChipsHTML(parsed) {
+    var chips = parsed.constraints.concat(parsed.dietTags).concat(parsed.excludes);
+    if (!chips.length) return '';
+    var inner = chips.map(function (c) {
+      return '<span style="display:inline-flex;align-items:center;gap:7px;padding:6px 8px 6px 13px;border-radius:999px;background:var(--acc);color:var(--ink);font-size:12.5px;font-weight:700;">' + esc(c.label) +
+        '<button data-act="autochip-remove" data-raw="' + esc(c.raw) + '" aria-label="Remove" style="width:18px;height:18px;border-radius:999px;border:none;background:color-mix(in oklab, var(--ink), transparent 78%);color:var(--ink);cursor:pointer;font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button></span>';
+    }).join('');
+    return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 20%);">✨ Smart filters</span>' + inner;
+  }
+
+  function heroThumbInner(p) {
+    return p.hasImage
+      ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" />'
+      : '<span class="init">' + esc(p.initial) + '</span>';
+  }
+
+  // Resolve which category/product the hero should show for a given (possibly not-yet-applied) selection.
+  function computeHeroData(catId, productId) {
+    var cats = state.categories || [];
+    if (!cats.length) return null;
+    var catIdx = catId ? cats.findIndex(function (c) { return c.id === catId; }) : 0;
+    if (catIdx < 0) catIdx = 0;
+    var heroCat = cats[catIdx];
+    var catProducts = (state.products || []).filter(function (p) { return p.categoryId === heroCat.id; }).map(enrich);
+    if (!catProducts.length) return null;
+    var featured = catProducts.find(function (p) { return p.id === productId; }) || catProducts[0];
+    var theme = HERO_PALETTE[catIdx % HERO_PALETTE.length];
+    return { catIdx: catIdx, heroCat: heroCat, catProducts: catProducts, featured: featured, theme: theme };
+  }
+
+  function heroThumbBtn(p, active) {
+    return '<button data-act="hero-pick" data-id="' + esc(p.id) + '" class="bo-hero-thumb' + (active ? ' active' : '') + '" title="' + esc(p.name) + '">' + heroThumbInner(p) + '</button>';
+  }
+  function heroDotBtn(p, active) {
+    return '<button data-act="hero-pick" data-id="' + esc(p.id) + '" class="bo-dot' + (active ? ' active' : '') + '" aria-label="' + esc(p.name) + '"></button>';
+  }
+  function heroPhotoInner(p) {
+    return p.hasImage
+      ? '<img src="' + esc(p.image) + '" alt="' + esc(p.name) + '" />'
+      : '<span class="init">' + esc(p.initial) + '</span>';
+  }
+
+  // The crossfading inner content of the hero panel (badge, title, copy, stats, thumbs, dots, CTA).
+  function heroTextBlockHTML(d) {
+    var thumbs = d.catProducts.slice(0, 4).map(function (p) { return heroThumbBtn(p, p.id === d.featured.id); }).join('');
+    var dots = d.catProducts.slice(0, 4).map(function (p) { return heroDotBtn(p, p.id === d.featured.id); }).join('');
+    var stats = '<span style="font-size:11px;font-weight:800;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.7);color:#13151a;">' + esc(d.featured.kcalLabel) + '</span>' +
+      '<span style="font-size:11px;font-weight:800;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.7);color:#13151a;">' + esc(d.featured.proteinLabel) + '</span>';
+    return '<span class="bo-hero-badge bo-in bo-in-1">' + esc(d.heroCat.name) + ' · ' + d.catProducts.length + (d.catProducts.length === 1 ? ' dish' : ' dishes') + '</span>' +
+      '<h1 class="bo-hero-title bo-in bo-in-1">' + esc(d.featured.name) + '</h1>' +
+      '<p class="bo-hero-desc bo-in bo-in-2">' + esc(d.featured.description) + '</p>' +
+      '<div class="bo-hero-stats bo-in bo-in-2">' + stats + '</div>' +
+      '<div class="bo-hero-thumbs bo-in bo-in-3" id="bo-hero-thumbs">' + thumbs + '</div>' +
+      '<div class="bo-hero-dots bo-in bo-in-3" id="bo-hero-dots">' + dots + '</div>' +
+      '<button data-act="open-product" data-id="' + esc(d.featured.id) + '" class="bo-hero-cta bo-in bo-in-4">View details →</button>';
+  }
+
+  function catRowHTML() {
+    var s = state;
+    return [chip('All', s.activeCat == null, 'data-act="cat-set" data-id="__all__"')].concat(s.categories.map(function (c) { return chip(c.name, s.activeCat === c.id, 'data-act="cat-set" data-id="' + esc(c.id) + '"'); })).join('');
+  }
+
+  function heroHTML() {
+    var d = computeHeroData(state.activeCat, state.heroProductId);
+    if (!d) return '';
+    var theme = d.theme;
+
+    var tabs = state.categories.map(function (c, i) {
+      return '<button data-act="hero-cat-set" data-id="' + esc(c.id) + '" class="bo-hero-tab' + (i === d.catIdx ? ' active' : '') + '">' + esc(c.name) + '</button>';
+    }).join('');
+
+    var floats = '<div class="bo-float" style="width:120px;height:120px;left:-30px;top:-30px;background:' + theme.glow + ';opacity:.14;animation-duration:7s;"></div>' +
+      '<div class="bo-float" style="width:70px;height:70px;right:30px;bottom:20px;background:' + theme.glow + ';opacity:.18;animation-duration:5.5s;animation-delay:.6s;"></div>';
+    var photoFloats = '<div class="bo-float" style="width:54px;height:54px;left:0;top:14%;background:' + theme.glow + ';opacity:.5;animation-duration:6.5s;"></div>' +
+      '<div class="bo-float" style="width:34px;height:34px;right:6%;bottom:8%;background:' + theme.glow + ';opacity:.6;animation-duration:5s;animation-delay:.4s;"></div>';
+
+    return '<section class="bo-hero">' +
+      '<div class="bo-hero-tabs" id="bo-hero-tabs">' + tabs + '</div>' +
+      '<div class="bo-hero-grid">' +
+        '<div class="bo-hero-panel" id="bo-hero-panel" style="background:' + theme.blob + ';">' + floats +
+          '<div class="bo-hero-text" id="bo-hero-text">' + heroTextBlockHTML(d) + '</div>' +
+        '</div>' +
+        '<div class="bo-hero-photo-wrap bo-in bo-in-2" id="bo-hero-photowrap">' +
+          '<div class="bo-hero-glow" id="bo-hero-glow" style="background:' + theme.glow + ';"></div>' + photoFloats +
+          '<button data-act="open-product" data-id="' + esc(d.featured.id) + '" class="bo-hero-photo" id="bo-hero-photo" aria-label="View ' + esc(d.featured.name) + '">' + heroPhotoInner(d.featured) + '</button>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  function menuHTML(m) {
+    var s = state;
+
+    var segStyle = function (active) { return 'display:flex;align-items:center;justify-content:center;width:38px;height:32px;border-radius:999px;border:none;cursor:pointer;transition:all .12s ease;background:' + (active ? 'var(--acc)' : 'transparent') + ';color:' + (active ? 'var(--ink)' : 'color-mix(in oklab, var(--acc), transparent 25%)') + ';'; };
+    var catRow = catRowHTML();
+
+    return '<main style="max-width:1320px;margin:0 auto;padding:0 20px 28px;animation:bo-fade .3s ease;">' +
+      '<div id="home"></div><div id="bo-hero-mount" style="padding:32px 4px 42px;">' + heroHTML() + '</div>' +
+
+      '<section id="menu" class="bo-toolbar" style="position:sticky;top:84px;z-index:30;border:1px solid rgba(19,21,26,.1);border-radius:20px;padding:16px;margin-bottom:32px;display:flex;flex-direction:column;gap:14px;">' +
+        '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">' +
+          '<div style="position:relative;flex:1;min-width:180px;">' +
+            '<span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:color-mix(in oklab, var(--acc), transparent 30%);font-size:15px;">⌕</span>' +
+            '<input value="' + esc(s.search) + '" data-act="search" placeholder="Search — try “25g protein below 600 cal”" style="width:100%;padding:11px 14px 11px 34px;border-radius:999px;border:1px solid color-mix(in oklab, var(--acc), transparent 70%);background:color-mix(in oklab, var(--bp), transparent 45%);color:#F6E9DA;font-size:14px;" />' +
+          '</div>' +
+          '<div style="position:relative;">' +
+            filterButtonHTML(m.filterCount) +
+            (s.filtersOpen ? filtersPopoverHTML() : '') +
+          '</div>' +
+          '<div style="display:flex;gap:4px;padding:4px;border-radius:999px;border:1px solid color-mix(in oklab, var(--acc), transparent 78%);">' +
+            '<button data-act="set-grid" aria-label="Grid view" title="Grid view" style="' + segStyle(s.layout === 'cards') + '"><svg width="17" height="17" viewBox="0 0 18 18" fill="currentColor"><rect x="0" y="0" width="7.5" height="7.5" rx="2"/><rect x="10.5" y="0" width="7.5" height="7.5" rx="2"/><rect x="0" y="10.5" width="7.5" height="7.5" rx="2"/><rect x="10.5" y="10.5" width="7.5" height="7.5" rx="2"/></svg></button>' +
+            '<button data-act="set-list" aria-label="List view" title="List view" style="' + segStyle(s.layout === 'list') + '"><svg width="17" height="17" viewBox="0 0 18 18" fill="currentColor"><rect x="0" y="1" width="4.5" height="4.5" rx="1.3"/><rect x="6.5" y="1.7" width="11.5" height="3" rx="1.5"/><rect x="0" y="6.8" width="4.5" height="4.5" rx="1.3"/><rect x="6.5" y="7.5" width="11.5" height="3" rx="1.5"/><rect x="0" y="12.6" width="4.5" height="4.5" rx="1.3"/><rect x="6.5" y="13.3" width="11.5" height="3" rx="1.5"/></svg></button>' +
+          '</div>' +
+        '</div>' +
+        '<div id="bo-autochips" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' + autoChipsHTML(m.parsed) + '</div>' +
+        '<div id="bo-catrow" style="display:flex;flex-wrap:wrap;gap:8px;">' + catRow + '</div>' +
+      '</section>' +
+
+      '<div id="bo-results">' + resultsHTML(m) + '</div>' +
+      '<section id="story" class="bo-story">' +
+        '<div><span class="bo-story-kicker">Made to make you feel good</span><h2>Balanced bowls.<br>Boldly done.</h2></div>' +
+        '<p>' + esc((state.brand && state.brand.tagline) || 'Where taste meets balance — every bowl crafted with precision.') + ' Bowled Over brings fruit-forward smoothie bowls, nourishing grains and cold-pressed refreshers together in one colourful menu. Pick your mood, check the macros, and find your next favourite.</p>' +
+      '</section>' +
+    '</main>';
+  }
+
+  function footerHTML() {
+    return '<footer class="bo-footer"><span>© ' + new Date().getFullYear() + ' Bowled Over</span><span>Fresh bowls · Honest ingredients · Bengaluru</span></footer>';
+  }
+
+  function detailModalHTML() {
+    var selRaw = state.selectedId ? state.products.find(function (p) { return p.id === state.selectedId; }) : null;
+    if (!selRaw) return '';
+    var sel = enrich(selRaw);
+    var img = sel.hasImage
+      ? '<img src="' + esc(sel.image) + '" alt="' + esc(sel.name) + '" style="width:100%;height:100%;object-fit:cover;" />'
+      : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg, color-mix(in oklab, var(--acc), var(--bp) 35%), var(--bp));font-family:\'Anton\',sans-serif;font-size:96px;color:color-mix(in oklab, var(--acc), transparent 32%);">' + esc(sel.initial) + '</div>';
+
+    var dietChips = (sel.dietChips || []).map(function (d) { return '<span style="font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;background:var(--acc);color:var(--ink);">' + esc(d) + '</span>'; }).join('');
+
+    var mk = function (label, grams, step) {
+      var n = Math.max(0, Math.min(10, Math.round(grams / step)));
+      var filled = ''; for (var i = 0; i < n; i++) filled += '<span style="flex:1;height:8px;border-radius:3px;background:var(--acc);"></span>';
+      var empty = ''; for (var j = 0; j < 10 - n; j++) empty += '<span style="flex:1;height:8px;border-radius:3px;background:color-mix(in oklab, var(--acc), transparent 82%);"></span>';
+      return '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span style="width:56px;font-size:12px;font-weight:700;color:color-mix(in oklab, #F6E9DA, transparent 18%);">' + label + '</span>' +
+        '<span style="flex:1;display:flex;gap:3px;">' + filled + empty + '</span>' +
+        '<span style="width:42px;text-align:right;font-size:12.5px;font-weight:700;color:var(--acc);">' + grams + 'g</span>' +
+      '</div>';
+    };
+    var macroBars = mk('Protein', selRaw.macros.protein, 4) + mk('Carbs', selRaw.macros.carbs, 8) + mk('Fat', selRaw.macros.fat, 5);
+
+    var allergens = selRaw.allergens || [];
+    var allergensBlock = allergens.length
+      ? '<div style="display:flex;flex-wrap:wrap;gap:7px;">' + allergens.map(function (a) { return '<span style="font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid color-mix(in oklab, #e5a54d, transparent 55%);color:#f0c07a;background:color-mix(in oklab, #e5a54d, transparent 88%);">Contains ' + esc(a) + '</span>'; }).join('') + '</div>'
+      : '<span style="font-size:13px;color:color-mix(in oklab, #7ee0a0, transparent 20%);font-weight:600;">✓ No listed allergens</span>';
+
+    return '<div data-act="close-product" style="position:fixed;inset:0;z-index:60;background:rgba(10,2,8,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:0;animation:bo-fade .2s ease;">' +
+      '<div data-act="noop" class="bo-detail-card" style="width:100%;max-width:640px;max-height:92vh;overflow:auto;background:var(--surface);border:1px solid rgba(19,21,26,.14);border-radius:24px 24px 0 0;animation:bo-pop .28s cubic-bezier(.2,.8,.2,1);">' +
+        '<div style="position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;">' + img +
+          '<button data-act="close-product" style="position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:999px;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>' +
+        '</div>' +
+        '<div style="padding:22px 22px 30px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px;">' +
+            '<h2 style="margin:0;font-family:\'Anton\',sans-serif;font-weight:400;font-size:30px;letter-spacing:.4px;line-height:1;color:#F6E9DA;">' + esc(sel.name) + '</h2>' +
+            '<span style="font-weight:800;font-size:20px;color:var(--acc);white-space:nowrap;">' + esc(sel.priceLabel) + '</span>' +
+          '</div>' +
+          '<p style="margin:0 0 20px;font-size:14.5px;line-height:1.55;color:color-mix(in oklab, #F6E9DA, transparent 22%);">' + esc(sel.description) + '</p>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px;">' + dietChips + '</div>' +
+          '<div style="display:grid;grid-template-columns:auto 1fr;gap:18px 20px;align-items:center;padding:18px;border-radius:18px;background:color-mix(in oklab, var(--acc), transparent 92%);border:1px solid color-mix(in oklab, var(--acc), transparent 84%);margin-bottom:20px;">' +
+            '<div style="text-align:center;padding-right:20px;border-right:1px solid color-mix(in oklab, var(--acc), transparent 78%);">' +
+              '<div style="font-family:\'Anton\',sans-serif;font-size:40px;line-height:1;color:var(--acc);">' + selRaw.macros.cal + '</div>' +
+              '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 25%);margin-top:4px;">kcal</div>' +
+            '</div>' +
+            '<div style="display:flex;flex-direction:column;gap:11px;">' + macroBars + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:color-mix(in oklab, var(--acc), transparent 20%);margin-bottom:9px;">Allergens</div>' +
+            allergensBlock +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // ---------- render ----------
+  function render() {
+    if (!state.loaded) {
+      root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--acc);font-family:\'Anton\',sans-serif;font-size:24px;letter-spacing:1px;">LOADING MENU…</div>';
+      return;
+    }
+    root.innerHTML = headerHTML() + menuHTML(computeMenu()) + footerHTML() + detailModalHTML() + toastMarkup();
+  }
+  function renderResults() {
+    var m = computeMenu();
+    var resEl = document.getElementById('bo-results');
+    if (resEl) resEl.innerHTML = resultsHTML(m);
+    var acEl = document.getElementById('bo-autochips');
+    if (acEl) acEl.innerHTML = autoChipsHTML(m.parsed);
+  }
+  function refreshFilterBadge() {
+    var btn = document.getElementById('bo-filterbtn');
+    if (!btn) return;
+    btn.outerHTML = filterButtonHTML(computeMenu().filterCount);
+  }
+  function renderHero() {
+    var el = document.getElementById('bo-hero-mount');
+    if (el) el.innerHTML = heroHTML();
+  }
+
+  var heroAnimating = false;
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function applyHeroPalette(mount, panel, theme) {
+    var glow = document.getElementById('bo-hero-glow');
+    panel.style.background = theme.blob;
+    root.style.setProperty('--surface', theme.surface);
+    root.style.setProperty('--bp', theme.surface);
+    root.style.setProperty('--bp2', theme.blob);
+    document.body.style.background = theme.surface;
+    if (glow) glow.style.background = theme.glow;
+    Array.prototype.forEach.call(mount.querySelectorAll('.bo-float'), function (f) { f.style.background = theme.glow; });
+  }
+
+  // The prototype's bowl travels around a shared pivot rather than sliding on a line.
+  // CSS transform-origin below the image creates that circular, clockwise orbit.
+  function heroTransitionTo(catId, productId) {
+    if (heroAnimating) return;
+    var mount = document.getElementById('bo-hero-mount');
+    var panel = mount && document.getElementById('bo-hero-panel');
+    if (!mount || !panel) { // not mounted yet (e.g. very first paint) — just set state and do a normal render
+      state.activeCat = catId; state.heroProductId = productId; render(); return;
+    }
+    var oldData = computeHeroData(state.activeCat, state.heroProductId);
+    state.activeCat = catId; state.heroProductId = productId;
+    var newData = computeHeroData(catId, productId);
+    if (!oldData || !newData) { renderHero(); return; }
+    var photoChanged = oldData.featured.id !== newData.featured.id;
+    var reduced = prefersReducedMotion();
+    heroAnimating = !reduced && photoChanged;
+
+    // 1) nav underline: existing buttons persist, so the CSS ::after transition slides it.
+    var tabsEl = document.getElementById('bo-hero-tabs');
+    if (tabsEl) {
+      Array.prototype.forEach.call(tabsEl.querySelectorAll('.bo-hero-tab'), function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-id') === newData.heroCat.id);
+      });
+    }
+
+    // The palette waits until the incoming bowl has nearly completed its orbit.
+    if (reduced || !photoChanged) applyHeroPalette(mount, panel, newData.theme);
+
+    // Copy leaves with the old bowl and returns as the new bowl enters.
+    var textEl = document.getElementById('bo-hero-text');
+    if (textEl) {
+      if (reduced) {
+        textEl.innerHTML = heroTextBlockHTML(newData);
+      } else {
+        textEl.style.transition = 'opacity .28s ease, transform .32s cubic-bezier(.4,0,.2,1)';
+        textEl.style.opacity = '0';
+        textEl.style.transform = 'translateY(14px)';
+        setTimeout(function () {
+          textEl.innerHTML = heroTextBlockHTML(newData);
+          textEl.style.transition = 'none';
+          textEl.style.transform = 'translateY(-12px)';
+          void textEl.offsetWidth;
+          textEl.style.transition = 'opacity .38s ease, transform .42s cubic-bezier(.2,.8,.2,1)';
+          textEl.style.opacity = '1';
+          textEl.style.transform = 'translateY(0)';
+        }, photoChanged ? 570 : 280);
+      }
+    }
+
+    // Clockwise exit to the right, then counter-positioned entrance from the left.
+    // Both movements share the same pivot, producing one continuous circumference.
+    var photoBtn = document.getElementById('bo-hero-photo');
+    if (photoBtn && photoChanged) {
+      if (reduced) {
+        photoBtn.innerHTML = heroPhotoInner(newData.featured);
+        photoBtn.setAttribute('data-id', newData.featured.id);
+        photoBtn.setAttribute('aria-label', 'View ' + newData.featured.name);
+      } else {
+        photoBtn.style.transition = 'none';
+        photoBtn.style.transformOrigin = '50% 155%';
+        photoBtn.style.willChange = 'transform, opacity';
+        var exitOrbit = photoBtn.animate([
+          { transform: 'rotate(0deg) scale(1)', opacity: 1, offset: 0 },
+          { transform: 'rotate(34deg) scale(.98)', opacity: 1, offset: .42 },
+          { transform: 'rotate(78deg) scale(.84)', opacity: .72, offset: .78 },
+          { transform: 'rotate(112deg) scale(.62)', opacity: 0, offset: 1 }
+        ], { duration: 620, easing: 'cubic-bezier(.62,.01,.4,1)', fill: 'forwards' });
+
+        setTimeout(function () {
+          exitOrbit.cancel();
+          photoBtn.innerHTML = heroPhotoInner(newData.featured);
+          photoBtn.setAttribute('data-id', newData.featured.id);
+          photoBtn.setAttribute('aria-label', 'View ' + newData.featured.name);
+          var enterOrbit = photoBtn.animate([
+            { transform: 'rotate(-112deg) scale(.62)', opacity: 0, offset: 0 },
+            { transform: 'rotate(-78deg) scale(.84)', opacity: .72, offset: .22 },
+            { transform: 'rotate(-30deg) scale(.98)', opacity: 1, offset: .62 },
+            { transform: 'rotate(0deg) scale(1)', opacity: 1, offset: 1 }
+          ], { duration: 700, easing: 'cubic-bezier(.2,.82,.2,1)', fill: 'forwards' });
+
+          setTimeout(function () { applyHeroPalette(mount, panel, newData.theme); }, 540);
+          enterOrbit.onfinish = function () {
+            enterOrbit.cancel();
+            photoBtn.style.transform = '';
+            photoBtn.style.opacity = '';
+            photoBtn.style.willChange = '';
+            heroAnimating = false;
+          };
+        }, 620);
+      }
+    } else {
+      heroAnimating = false;
+    }
+
+    // keep the lower filter toolbar's category chips + results grid in sync immediately (no need to wait on the animation)
+    var catRowEl = document.getElementById('bo-catrow');
+    if (catRowEl) catRowEl.innerHTML = catRowHTML();
+    renderResults();
+    refreshFilterBadge();
+  }
+
+  function startHeroAutoplay() {
+    clearInterval(heroTimer);
+    heroTimer = setInterval(function () {
+      if (heroPaused || heroAnimating) return;
+      var cats = state.categories || [];
+      if (!cats.length) return;
+      var catId = state.activeCat || cats[0].id;
+      var prods = (state.products || []).filter(function (p) { return p.categoryId === catId; });
+      if (prods.length < 2) return;
+      var curIdx = prods.findIndex(function (p) { return p.id === state.heroProductId; });
+      var next = prods[(curIdx + 1) % prods.length];
+      heroTransitionTo(catId, next.id);
+    }, 7000);
+  }
+  function toastMarkup() {
+    if (!state.toast) return '<div id="bo-toast"></div>';
+    return '<div id="bo-toast"><div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:90;background:var(--acc);color:var(--ink);font-weight:800;font-size:14px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:bo-toast .25s ease;">' + esc(state.toast) + '</div></div>';
+  }
+  function renderToast() {
+    var el = document.getElementById('bo-toast');
+    if (!el) { render(); return; }
+    el.innerHTML = state.toast
+      ? '<div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:90;background:var(--acc);color:var(--ink);font-weight:800;font-size:14px;padding:12px 22px;border-radius:999px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:bo-toast .25s ease;">' + esc(state.toast) + '</div>'
+      : '';
+  }
+
+  // ---------- events ----------
+  function toggleArr(arr, val, setter) { setter(arr.indexOf(val) !== -1 ? arr.filter(function (x) { return x !== val; }) : arr.concat([val])); }
+
+  function onClick(e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+    var id = el.getAttribute('data-id');
+    var val = el.getAttribute('data-val');
+    switch (act) {
+      case 'noop': return;
+      case 'toggle-filters': apply(function () { state.filtersOpen = !state.filtersOpen; }); break;
+      case 'close-filters': apply(function () { state.filtersOpen = false; }); break;
+      case 'clear-all-filters': apply(function () { state.filterDiets = []; state.excludeAllergens = []; state.sortBy = 'featured'; state.macroFilters = Object.assign({}, MACRO_DEFAULTS); }); break;
+      case 'set-grid': apply(function () { state.layout = 'cards'; }); break;
+      case 'set-list': apply(function () { state.layout = 'list'; }); break;
+      case 'diet-toggle': apply(function () { toggleArr(state.filterDiets, val, function (a) { state.filterDiets = a; }); }); break;
+      case 'allergen-toggle': apply(function () { toggleArr(state.excludeAllergens, val, function (a) { state.excludeAllergens = a; }); }); break;
+      case 'sort-set': apply(function () { state.sortBy = val; }); break;
+      case 'cat-set': heroTransitionTo(id === '__all__' ? null : id, null); startHeroAutoplay(); break;
+      case 'autochip-remove': removeFromSearch(el.getAttribute('data-raw')); break;
+      case 'clear-filters': apply(function () { state.activeCat = null; state.search = ''; state.filterDiets = []; state.excludeAllergens = []; state.sortBy = 'featured'; state.heroProductId = null; }); break;
+      case 'open-product': apply(function () { state.selectedId = id; }); break;
+      case 'close-product': apply(function () { state.selectedId = null; }); break;
+      case 'hero-cat-set': heroTransitionTo(id, null); startHeroAutoplay(); break;
+      case 'hero-pick': heroTransitionTo(state.activeCat, id); startHeroAutoplay(); break;
+    }
+  }
+  function onInput(e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+    var v = el.value;
+    if (act === 'search') { setSilent(function () { state.search = v; }); renderResults(); }
+    else if (act === 'macro-slider') {
+      var key = el.getAttribute('data-key');
+      var meta = MACRO_SLIDERS.find(function (mm) { return mm.key === key; });
+      setSilent(function () { state.macroFilters[key] = Number(v); });
+      var lab = document.querySelector('[data-mlabel="' + key + '"]');
+      if (lab && meta) lab.textContent = (Number(v) !== meta.off) ? (meta.pfx + v + meta.unit) : 'Any';
+      renderResults();
+      refreshFilterBadge();
+    }
+  }
+
+  // ---------- boot ----------
+  function boot() {
+    var data = B.load();
+    state.brand = data.brand; state.categories = data.categories; state.products = data.products;
+    state.loaded = true;
+    applyTheme();
+    render();
+    root.addEventListener('click', onClick);
+    root.addEventListener('input', onInput);
+    root.addEventListener('mouseover', function (e) { if (e.target.closest && e.target.closest('.bo-hero-grid')) heroPaused = true; });
+    root.addEventListener('mouseout', function (e) { if (e.target.closest && e.target.closest('.bo-hero-grid')) heroPaused = false; });
+    startHeroAutoplay();
+    // reflect edits made in the admin tab/page when returning to this one
+    window.addEventListener('storage', function (ev) {
+      if (ev.key !== B.LS_KEY) return;
+      var d = B.load();
+      state.brand = d.brand; state.categories = d.categories; state.products = d.products;
+      applyTheme(); render();
+    });
+    window.addEventListener('pageshow', function () {
+      var d = B.load();
+      state.brand = d.brand; state.categories = d.categories; state.products = d.products;
+      applyTheme(); render();
+    });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
